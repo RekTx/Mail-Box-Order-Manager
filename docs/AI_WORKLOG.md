@@ -73,7 +73,7 @@ Throughout development, several AI assumptions were audited and corrected:
 ## 4. Manual Hand-Crafted Code
 
 The following sections were specifically refined and hand-crafted:
-- **Direct CLI Execution Guard in Worker** ([`src/worker/mailbox.worker.ts`](file:///e:/interview/mail-one/src/worker/mailbox.worker.ts)):
+- **Direct CLI Execution Guard in Worker** ([`src/worker/mailbox.worker.ts`](../src/worker/mailbox.worker.ts)):
   ```typescript
   const isDirectCliExecution =
     typeof process !== "undefined" &&
@@ -90,8 +90,8 @@ The following sections were specifically refined and hand-crafted:
     });
   }
   ```
-- **Domain Format Regex** ([`src/domain/order.validation.ts`](file:///e:/interview/mail-one/src/domain/order.validation.ts)): Refined the domain validator regex (`/^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-_]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/`) to support multi-level TLDs (e.g., `co.uk`) while rejecting invalid formats.
-- **Strict Customer Isolation Invariants** ([`src/services/order.service.ts`](file:///e:/interview/mail-one/src/services/order.service.ts)): Added `getOrderForCustomer` to guarantee that tenant access rules are enforced in the domain service layer rather than in presentation routes.
+- **Domain Format Regex** ([`src/domain/order.validation.ts`](../src/domain/order.validation.ts)): Refined the domain validator regex (`/^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-_]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/`) to support multi-level TLDs (e.g., `co.uk`) while rejecting invalid formats.
+- **Strict Customer Isolation Invariants** ([`src/services/order.service.ts`](../src/services/order.service.ts)): Added `getOrderForCustomer` to guarantee that tenant access rules are enforced in the domain service layer rather than in presentation routes.
 
 ---
 
@@ -99,10 +99,9 @@ The following sections were specifically refined and hand-crafted:
 
 | Development Phase | Focus Area | Time Spent |
 |---|---|---|
-| **Phase 1** | Schema design, Prisma migrations, Domain FSM, Provider Strategy pattern | ~45 mins |
-| **Phase 2** | Concurrency-safe queue worker (`SKIP LOCKED`), atomic transactions, audit trail engine | ~45 mins |
-| **Phase 3** | Admin dashboard, status/provider filters, server-side pagination, protected retry flow | ~45 mins |
-| **Phase 4** | Customer order views, idempotent form with UUIDs, live polling detail view, integration tests | ~40 mins |
-| **Phase 5** | Authentication refactoring, Edge middleware, test suite polish, submission documentation | ~35 mins |
-| **Total** | | **~3.5 hours** |
-
+| **Phase 1** | Schema design, Prisma migrations, Domain FSM, Provider Strategy pattern | ~40 mins |
+| **Phase 2** | Concurrency-safe queue worker (`SKIP LOCKED`), atomic transactions, audit trail engine | ~40 mins |
+| **Phase 3** | Admin dashboard, status/provider filters, server-side pagination, protected retry flow | ~35 mins |
+| **Phase 4** | Customer order views, idempotent form with UUIDs, live polling detail view, integration tests | ~30 mins |
+| **Phase 5** | Authentication refactoring, Edge middleware, test suite polish, documentation & video demo | ~35 mins |
+| **Total** | | **~3.0 hours** |

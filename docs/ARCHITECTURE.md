@@ -7,9 +7,9 @@ The **Mailbox Order Manager** is structured around a strict layered architecture
 ## 1. Strategy Pattern
 
 - **File Locations**:
-  - Interface Contract: [`src/providers/provider.interface.ts`](file:///e:/interview/mail-one/src/providers/provider.interface.ts)
-  - Concrete Providers: [`src/providers/google.provider.ts`](file:///e:/interview/mail-one/src/providers/google.provider.ts), [`src/providers/microsoft.provider.ts`](file:///e:/interview/mail-one/src/providers/microsoft.provider.ts)
-  - Factory: [`src/providers/index.ts`](file:///e:/interview/mail-one/src/providers/index.ts)
+  - Interface Contract: [`src/providers/provider.interface.ts`](../src/providers/provider.interface.ts)
+  - Concrete Providers: [`src/providers/google.provider.ts`](../src/providers/google.provider.ts), [`src/providers/microsoft.provider.ts`](../src/providers/microsoft.provider.ts)
+  - Factory: [`src/providers/index.ts`](../src/providers/index.ts)
 
 ### Implementation
 The system defines a unified `MailboxProvider` interface:
@@ -38,8 +38,8 @@ Decouples vendor-specific API contracts and failure heuristics from the core ord
 ## 2. Finite State Machine (FSM)
 
 - **File Locations**:
-  - State Machine & Invariants: [`src/domain/state-machine.ts`](file:///e:/interview/mail-one/src/domain/state-machine.ts)
-  - Domain Types & Enums: [`src/domain/order.types.ts`](file:///e:/interview/mail-one/src/domain/order.types.ts)
+  - State Machine & Invariants: [`src/domain/state-machine.ts`](../src/domain/state-machine.ts)
+  - Domain Types & Enums: [`src/domain/order.types.ts`](../src/domain/order.types.ts)
 
 ### Implementation
 A pure, deterministic transition map governs the entire order lifecycle:
@@ -82,9 +82,9 @@ Guarantees domain invariants across concurrent operations. Terminal states (`ACT
 ## 3. Layered Service Architecture
 
 - **File Locations**:
-  - Order Domain Service: [`src/services/order.service.ts`](file:///e:/interview/mail-one/src/services/order.service.ts)
-  - Audit Logging Service: [`src/services/audit.service.ts`](file:///e:/interview/mail-one/src/services/audit.service.ts)
-  - Application Boundary Schemas: [`src/domain/order.validation.ts`](file:///e:/interview/mail-one/src/domain/order.validation.ts)
+  - Order Domain Service: [`src/services/order.service.ts`](../src/services/order.service.ts)
+  - Audit Logging Service: [`src/services/audit.service.ts`](../src/services/audit.service.ts)
+  - Application Boundary Schemas: [`src/domain/order.validation.ts`](../src/domain/order.validation.ts)
 
 ### Implementation
 The application strictly enforces separation of concerns across layers:
@@ -115,8 +115,8 @@ Decouples database operations and business logic from the Next.js delivery frame
 ## 4. Queue Worker with Concurrency Control
 
 - **File Locations**:
-  - Background Worker: [`src/worker/mailbox.worker.ts`](file:///e:/interview/mail-one/src/worker/mailbox.worker.ts)
-  - Worker Config & Exports: [`src/worker/index.ts`](file:///e:/interview/mail-one/src/worker/index.ts)
+  - Background Worker: [`src/worker/mailbox.worker.ts`](../src/worker/mailbox.worker.ts)
+  - Worker Config & Exports: [`src/worker/index.ts`](../src/worker/index.ts)
 
 ### Implementation
 Worker instances claim pending orders using PostgreSQL's row-level locking with `FOR UPDATE SKIP LOCKED` inside an interactive Prisma transaction:
@@ -138,4 +138,3 @@ Eliminates race conditions and guarantees **zero duplicate processing** across d
 
 ### Explicitly Rejected Alternative
 - **External Message Brokers (e.g., Redis + BullMQ)**: Introducing Redis and separate queue brokers was rejected to avoid unnecessary operational complexity, extra container dependencies, and network overhead when PostgreSQL row-level locking natively handles the throughput requirements with zero additional infrastructure.
-
