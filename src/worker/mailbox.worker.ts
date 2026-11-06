@@ -225,10 +225,18 @@ async function startWorker() {
   }
 }
 
-// Only invoke automatically when run directly via tsx / node
-if (process.env.NODE_ENV !== 'test') {
+// Only invoke automatically when run directly via tsx / node CLI
+const isDirectCliExecution =
+  typeof process !== "undefined" &&
+  process.argv &&
+  process.argv[1] &&
+  (process.argv[1].endsWith("mailbox.worker.ts") ||
+    process.argv[1].endsWith("mailbox.worker.js") ||
+    process.argv[1].includes("mailbox.worker"));
+
+if (isDirectCliExecution && process.env.NODE_ENV !== "test") {
   startWorker().catch((err) => {
-    console.error('[Worker Fatal]:', err);
+    console.error("[Worker Fatal]:", err);
     process.exit(1);
   });
 }

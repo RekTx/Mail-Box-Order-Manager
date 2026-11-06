@@ -10,8 +10,8 @@ export class GoogleProvider implements MailboxProvider {
   private readonly latencyMs: number;
 
   constructor(options?: ProviderOptions) {
-    this.failureRate = options?.failureRate ?? 0.15; // 15% default failure rate
-    this.latencyMs = options?.latencyMs ?? 50;       // 50ms default simulated latency
+    this.failureRate = options?.failureRate ?? 0.20; // 20% default simulated failure threshold
+    this.latencyMs = options?.latencyMs ?? 2000;    // 2-second per-mailbox simulated latency
   }
 
   async provisionMailbox(
