@@ -54,12 +54,18 @@ export function AdminNav({ currentUser }: AdminNavProps) {
               <span>Mailbox Order Manager</span>
             </Link>
 
-            <nav className="hidden md:flex space-x-4">
+            <nav className="hidden md:flex space-x-2">
               <Link
                 href="/admin"
-                className="rounded-md px-3 py-1.5 text-sm font-semibold text-slate-900 bg-slate-100 hover:bg-slate-200"
+                className="rounded-md px-3 py-1.5 text-xs font-semibold text-slate-900 bg-slate-100 hover:bg-slate-200"
               >
                 Admin Orders
+              </Link>
+              <Link
+                href="/orders"
+                className="rounded-md px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-50"
+              >
+                Customer View &rarr;
               </Link>
             </nav>
           </div>

@@ -65,6 +65,18 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
 }
 
 /**
+ * Ensures a user is authenticated (Customer or Admin).
+ * Throws AuthenticationError if not logged in.
+ */
+export async function requireAuthenticatedUser(): Promise<SessionUser> {
+  const user = await getCurrentUser();
+  if (!user) {
+    throw new AuthenticationError();
+  }
+  return user;
+}
+
+/**
  * Ensures the authenticated user has the ADMIN role.
  * Throws AuthorizationError if the user is not an admin.
  */
@@ -83,4 +95,3 @@ export async function requireAdminUser(): Promise<SessionUser> {
 
   return user;
 }
-

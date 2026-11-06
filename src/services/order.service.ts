@@ -197,4 +197,50 @@ export class OrderService {
       },
     });
   }
+
+  /**
+   * Fetch all orders belonging to a specific customer.
+   */
+  static async getCustomerOrders(customerId: string) {
+    return prisma.order.findMany({
+      where: { customerId },
+      orderBy: { createdAt: "desc" },
+      include: {
+        customer: { select: { email: true } },
+        mailboxes: { orderBy: { createdAt: "asc" } },
+        auditLogs: { orderBy: { createdAt: "asc" } },
+      },
+    });
+  }
+
+  /**
+   * Fetch order for a customer, enforcing customer-isolation boundaries.
+   * Throws an error if a customer attempts to access an order owned by someone else.
+   */
+  static async getOrderForCustomer(
+    orderId: string,
+    customerId: string,
+    isAdmin = false
+  ) {
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        customer: { select: { email: true } },
+        mailboxes: { orderBy: { createdAt: "asc" } },
+        auditLogs: { orderBy: { createdAt: "asc" } },
+      },
+    });
+
+    if (!order) {
+      return null;
+    }
+
+    if (!isAdmin && order.customerId !== customerId) {
+      throw new Error(
+        "Forbidden: You do not have permission to view this order."
+      );
+    }
+
+    return order;
+  }
 }
