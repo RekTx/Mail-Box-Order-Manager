@@ -2,10 +2,18 @@ import { prisma } from "@/lib/prisma";
 import {
   OrderStatus,
   MailboxStatus,
+  MailboxProviderType,
   assertTransition,
   CreateOrderInput,
 } from "@/domain";
 import { AuditService } from "./audit.service";
+
+export interface GetAdminOrdersParams {
+  status?: OrderStatus | "ALL";
+  provider?: MailboxProviderType | "ALL";
+  page?: number;
+  pageSize?: number;
+}
 
 export class OrderService {
   /**
@@ -136,13 +144,55 @@ export class OrderService {
   }
 
   /**
-   * Fetch order by ID with associated mailboxes and audit history.
+   * Queries orders with pagination and filtering for the Admin view.
+   * Business/data layer query strictly encapsulated in service.
+   */
+  static async getAdminOrders(params: GetAdminOrdersParams = {}) {
+    const page = Math.max(1, params.page ?? 1);
+    const pageSize = Math.max(1, Math.min(100, params.pageSize ?? 10));
+    const skip = (page - 1) * pageSize;
+
+    const where: any = {};
+    if (params.status && params.status !== "ALL") {
+      where.status = params.status;
+    }
+    if (params.provider && params.provider !== "ALL") {
+      where.provider = params.provider;
+    }
+
+    const [total, orders] = await Promise.all([
+      prisma.order.count({ where }),
+      prisma.order.findMany({
+        where,
+        skip,
+        take: pageSize,
+        orderBy: { createdAt: "desc" },
+        include: {
+          customer: { select: { email: true } },
+          mailboxes: { orderBy: { createdAt: "asc" } },
+          auditLogs: { orderBy: { createdAt: "asc" } },
+        },
+      }),
+    ]);
+
+    return {
+      orders,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / pageSize)),
+      page,
+      pageSize,
+    };
+  }
+
+  /**
+   * Fetch order by ID with associated customer, mailboxes, and audit history.
    */
   static async getOrderById(orderId: string) {
     return prisma.order.findUnique({
       where: { id: orderId },
       include: {
-        mailboxes: true,
+        customer: { select: { email: true } },
+        mailboxes: { orderBy: { createdAt: "asc" } },
         auditLogs: { orderBy: { createdAt: "asc" } },
       },
     });
