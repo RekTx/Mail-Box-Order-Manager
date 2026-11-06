@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { OrderService } from "@/services/order.service";
 import { OrderStatus, MailboxProviderType, UserRole } from "@/domain";
@@ -18,55 +19,16 @@ export default async function AdminOrdersPage({
   searchParams,
 }: AdminPageProps) {
   const currentUser = await getCurrentUser();
-  const isAdmin = currentUser?.role === UserRole.ADMIN;
 
-  // Enforce admin protection
+  if (!currentUser) {
+    redirect("/login");
+  }
+
+  const isAdmin = currentUser.role === UserRole.ADMIN;
+
+  // Enforce admin protection: non-admins are redirected immediately to customer orders
   if (!isAdmin) {
-    return (
-      <div className="min-h-screen bg-slate-50">
-        <AdminNav currentUser={currentUser} />
-        <main className="max-w-4xl mx-auto px-4 py-16 text-center">
-          <div className="rounded-xl border border-rose-200 bg-rose-50 p-8 shadow-sm">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-rose-100">
-              <svg
-                className="h-6 w-6 text-rose-600"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="2"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"
-                />
-              </svg>
-            </div>
-            <h2 className="mt-4 text-lg font-bold text-slate-900">
-              Access Denied: Admin Privileges Required
-            </h2>
-            <p className="mt-2 text-sm text-slate-600">
-              You are currently authenticated as{" "}
-              <span className="font-semibold text-slate-800">
-                {currentUser?.email || "anonymous"}
-              </span>{" "}
-              with role{" "}
-              <span className="font-semibold text-amber-700">
-                {currentUser?.role || "CUSTOMER"}
-              </span>
-              . Non-admin users cannot access admin-restricted views or trigger retries.
-            </p>
-            <p className="mt-4 text-xs text-slate-500">
-              Use the user switcher in the top navigation bar to switch back to{" "}
-              <code className="rounded bg-rose-100/60 px-1 py-0.5 font-mono text-rose-800">
-                admin@example.com
-              </code>{" "}
-              to continue.
-            </p>
-          </div>
-        </main>
-      </div>
-    );
+    redirect("/orders");
   }
 
   // Parse filters

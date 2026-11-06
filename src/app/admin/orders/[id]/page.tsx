@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { getCurrentUser, requireAdminUser } from "@/lib/auth";
+import { notFound, redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth";
 import { OrderService } from "@/services/order.service";
 import { AdminNav } from "@/components/admin-nav";
 import { StatusBadge } from "@/components/status-badge";
@@ -20,23 +20,13 @@ export default async function OrderDetailPage({
 }: OrderDetailPageProps) {
   const currentUser = await getCurrentUser();
 
-  // Enforce admin protection
-  if (currentUser?.role !== "ADMIN") {
-    return (
-      <div className="min-h-screen bg-slate-50">
-        <AdminNav currentUser={currentUser} />
-        <main className="max-w-4xl mx-auto px-4 py-16 text-center">
-          <div className="rounded-xl border border-rose-200 bg-rose-50 p-8 shadow-sm">
-            <h2 className="text-lg font-bold text-slate-900">
-              Access Denied: Admin Privileges Required
-            </h2>
-            <p className="mt-2 text-sm text-slate-600">
-              You must be logged in as an Admin to view order details.
-            </p>
-          </div>
-        </main>
-      </div>
-    );
+  if (!currentUser) {
+    redirect("/login");
+  }
+
+  // Enforce admin protection: non-admins are redirected immediately to customer orders
+  if (currentUser.role !== "ADMIN") {
+    redirect("/orders");
   }
 
   const order = await OrderService.getOrderById(params.id);

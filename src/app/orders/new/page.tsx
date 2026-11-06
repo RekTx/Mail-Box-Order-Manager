@@ -1,9 +1,15 @@
+import { redirect } from "next/navigation";
 import { requireAuthenticatedUser } from "@/lib/auth";
 import { CustomerNav } from "@/components/customer-nav";
 import { OrderCreateForm } from "@/components/order-create-form";
+import { UserRole } from "@/domain";
 
 export default async function NewOrderPage() {
   const currentUser = await requireAuthenticatedUser();
+
+  if (currentUser.role === UserRole.ADMIN) {
+    redirect("/admin");
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">

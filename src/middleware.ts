@@ -10,7 +10,7 @@ export function middleware(request: NextRequest) {
   const isAuth = !!userCookie;
   const isAdmin = userCookie?.toLowerCase() === "admin@example.com";
 
-  // If authenticated user visits /login, redirect to their dashboard
+  // If authenticated user visits /login, redirect to their respective dashboard
   if (pathname === "/login") {
     if (isAuth) {
       const destination = isAdmin ? "/admin" : "/orders";
@@ -19,7 +19,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Protected paths: /admin and /orders (and /dashboard)
+  // Protected paths check
   const isProtectedPath =
     pathname.startsWith("/admin") ||
     pathname.startsWith("/orders") ||
@@ -29,6 +29,17 @@ export function middleware(request: NextRequest) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("from", pathname);
     return NextResponse.redirect(loginUrl);
+  }
+
+  // Role-based boundary enforcement:
+  // If a customer tries to visit /admin, redirect to /orders
+  if (pathname.startsWith("/admin") && !isAdmin) {
+    return NextResponse.redirect(new URL("/orders", request.url));
+  }
+
+  // If an admin visits /orders, redirect to /admin
+  if (pathname.startsWith("/orders") && isAdmin) {
+    return NextResponse.redirect(new URL("/admin", request.url));
   }
 
   return NextResponse.next();
@@ -42,4 +53,3 @@ export const config = {
     "/dashboard/:path*",
   ],
 };
-

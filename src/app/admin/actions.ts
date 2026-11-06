@@ -35,28 +35,6 @@ export async function retryOrderAction(orderId: string): Promise<ActionResult> {
 }
 
 /**
- * Demo Session switcher allowing testing as Admin or Customer.
- */
-export async function switchUserAction(email: string): Promise<ActionResult> {
-  try {
-    const cookieStore = cookies();
-    cookieStore.set(DEMO_USER_COOKIE, email, {
-      path: "/",
-      httpOnly: false,
-      sameSite: "lax",
-    });
-
-    revalidatePath("/admin");
-    return { success: true };
-  } catch (error: any) {
-    return {
-      success: false,
-      error: error?.message || "Failed to switch user.",
-    };
-  }
-}
-
-/**
  * Allows triggering the background worker cycle from the admin dashboard.
  */
 export async function triggerWorkerCycleAction(): Promise<ActionResult> {

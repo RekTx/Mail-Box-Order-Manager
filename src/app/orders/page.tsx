@@ -1,13 +1,18 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { requireAuthenticatedUser } from "@/lib/auth";
 import { OrderService } from "@/services/order.service";
 import { CustomerNav } from "@/components/customer-nav";
 import { StatusBadge } from "@/components/status-badge";
 import { ProviderBadge } from "@/components/provider-badge";
-import { OrderStatus } from "@/domain";
+import { OrderStatus, UserRole } from "@/domain";
 
 export default async function CustomerOrdersPage() {
   const currentUser = await requireAuthenticatedUser();
+
+  if (currentUser.role === UserRole.ADMIN) {
+    redirect("/admin");
+  }
 
   // Strictly query customer-isolated orders from service layer
   const orders = await OrderService.getCustomerOrders(currentUser.id);
