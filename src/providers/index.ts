@@ -1,20 +1,21 @@
-import { MailboxProviderType } from "@/domain";
-import { IMailboxProvider } from "./mailbox-provider.interface";
-import { GoogleMailboxProvider } from "./google-provider";
-import { MicrosoftMailboxProvider } from "./microsoft-provider";
+import { MailboxProvider, ProviderOptions } from "./provider.interface";
+import { GoogleProvider } from "./google.provider";
+import { MicrosoftProvider } from "./microsoft.provider";
 
-export * from "./mailbox-provider.interface";
-export * from "./google-provider";
-export * from "./microsoft-provider";
+export * from "./provider.interface";
+export * from "./google.provider";
+export * from "./microsoft.provider";
 
-export function getMailboxProvider(provider: MailboxProviderType): IMailboxProvider {
-  switch (provider) {
-    case MailboxProviderType.GOOGLE:
-      return new GoogleMailboxProvider();
-    case MailboxProviderType.MICROSOFT:
-      return new MicrosoftMailboxProvider();
+export function getProvider(
+  name: "google" | "microsoft",
+  options?: ProviderOptions
+): MailboxProvider {
+  switch (name) {
+    case "google":
+      return new GoogleProvider(options);
+    case "microsoft":
+      return new MicrosoftProvider(options);
     default:
-      throw new Error(`Unsupported mailbox provider: ${provider}`);
+      throw new Error(`Unsupported provider: ${name}`);
   }
 }
-
