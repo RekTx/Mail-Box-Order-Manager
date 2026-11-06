@@ -12,7 +12,9 @@ Features pure domain Finite State Machine transitions, concurrency-safe backgrou
 
 https://github.com/user-attachments/assets/dd57d83e-2b0c-4dc4-b332-e0eec5b64b03
 
-
+A higher quality youtube link
+## 🎥 Walkthrough Video
+**[Click here to watch the 3-minute demo video](https://youtu.be/G7ZmYvFPr2g)**
 
 ---
 
