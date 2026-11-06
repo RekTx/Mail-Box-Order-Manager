@@ -2,8 +2,9 @@
 
 import { useTransition, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { switchUserAction, triggerWorkerCycleAction } from "@/app/admin/actions";
+import { logoutAction } from "@/app/login/actions";
 import { SessionUser } from "@/lib/auth";
 
 interface CustomerNavProps {
@@ -11,11 +12,20 @@ interface CustomerNavProps {
 }
 
 export function CustomerNav({ currentUser }: CustomerNavProps) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [workerMessage, setWorkerMessage] = useState<string | null>(null);
   const pathname = usePathname();
 
   const isAdmin = currentUser?.role === "ADMIN";
+
+  const handleLogout = () => {
+    startTransition(async () => {
+      await logoutAction();
+      router.push("/login");
+      router.refresh();
+    });
+  };
 
   const handleSwitchRole = (email: string) => {
     startTransition(async () => {
@@ -160,6 +170,17 @@ export function CustomerNav({ currentUser }: CustomerNavProps) {
                 </button>
               </div>
             </div>
+
+            {/* Logout Button */}
+            <button
+              type="button"
+              onClick={handleLogout}
+              disabled={isPending}
+              className="rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50"
+              title="Sign out of current account"
+            >
+              Logout
+            </button>
           </div>
         </div>
 

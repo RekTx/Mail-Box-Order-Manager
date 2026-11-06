@@ -25,16 +25,14 @@ export class AuthorizationError extends Error {
 }
 
 /**
- * Gets the current active demo user from cookie or falls back to admin@example.com.
+ * Validates credentials against the database or seeded demo fallbacks.
  */
-export async function getCurrentUser(): Promise<SessionUser | null> {
-  const cookieStore = cookies();
-  const demoEmail =
-    cookieStore.get(DEMO_USER_COOKIE)?.value || "admin@example.com";
+export async function authenticateUser(email: string): Promise<SessionUser | null> {
+  const normalizedEmail = email.trim().toLowerCase();
 
   try {
     const user = await prisma.user.findUnique({
-      where: { email: demoEmail },
+      where: { email: normalizedEmail },
     });
 
     if (user) {
@@ -45,11 +43,11 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
       };
     }
   } catch (error) {
-    console.warn("Could not query user from database, falling back to mock session:", error);
+    console.warn("DB lookup failed during auth, checking seeded fallbacks:", error);
   }
 
-  // Fallback if DB hasn't been seeded yet
-  if (demoEmail === "admin@example.com") {
+  // Fallbacks for seeded accounts
+  if (normalizedEmail === "admin@example.com") {
     return {
       id: "admin-seeded-id",
       email: "admin@example.com",
@@ -57,11 +55,30 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
     };
   }
 
-  return {
-    id: "customer-seeded-id",
-    email: demoEmail,
-    role: UserRole.CUSTOMER,
-  };
+  if (normalizedEmail === "customer@example.com") {
+    return {
+      id: "customer-seeded-id",
+      email: "customer@example.com",
+      role: UserRole.CUSTOMER,
+    };
+  }
+
+  return null;
+}
+
+/**
+ * Gets the current active demo user from the session cookie.
+ * Returns null if no active session cookie exists.
+ */
+export async function getCurrentUser(): Promise<SessionUser | null> {
+  const cookieStore = cookies();
+  const demoEmail = cookieStore.get(DEMO_USER_COOKIE)?.value?.trim();
+
+  if (!demoEmail) {
+    return null;
+  }
+
+  return authenticateUser(demoEmail);
 }
 
 /**
