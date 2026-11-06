@@ -1,0 +1,93 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  CUSTOMER
+  ADMIN
+}
+
+enum MailboxProvider {
+  google
+  microsoft
+}
+
+enum OrderStatus {
+  PENDING
+  PROVISIONING
+  ACTIVE
+  FAILED
+}
+
+enum MailboxStatus {
+  PENDING
+  PROVISIONING
+  ACTIVE
+  FAILED
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  role      UserRole @default(CUSTOMER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders Order[]
+
+  @@map("users")
+}
+
+model Order {
+  id             String          @id @default(cuid())
+  customerId     String
+  customer       User            @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  domain         String
+  provider       MailboxProvider
+  mailboxCount   Int
+  status         OrderStatus     @default(PENDING)
+  idempotencyKey String          @unique
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  mailboxes Mailbox[]
+  auditLogs AuditLog[]
+
+  @@index([customerId])
+  @@index([status])
+  @@map("orders")
+}
+
+model Mailbox {
+  id           String        @id @default(cuid())
+  orderId      String
+  order        Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  emailAddress String
+  status       MailboxStatus @default(PENDING)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([orderId])
+  @@index([emailAddress])
+  @@map("mailboxes")
+}
+
+model AuditLog {
+  id         String       @id @default(cuid())
+  orderId    String
+  order      Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  fromStatus OrderStatus?
+  toStatus   OrderStatus
+  actionBy   String
+  reason     String?
+  createdAt  DateTime     @default(now())
+
+  @@index([orderId])
+  @@map("audit_logs")
+}
+
