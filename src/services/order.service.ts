@@ -1,93 +1,143 @@
 import { prisma } from "@/lib/prisma";
 import {
-  CreateOrderInput,
   OrderStatus,
-  canTransitionOrder,
+  MailboxStatus,
+  assertTransition,
+  CreateOrderInput,
 } from "@/domain";
 import { AuditService } from "./audit.service";
 
 export class OrderService {
   /**
-   * Creates an order idempotently or returns the existing order if idempotency key matches.
+   * Creates an order idempotently.
+   * If an order with the provided idempotencyKey already exists, returns the existing order.
+   * Otherwise, creates the order with status PENDING, placeholder mailboxes, and records the initial audit log.
    */
-  static async createOrder(input: CreateOrderInput) {
-    // Check if an order already exists for this idempotency key
+  static async createOrder(data: CreateOrderInput) {
     const existingOrder = await prisma.order.findUnique({
-      where: { idempotencyKey: input.idempotencyKey },
+      where: { idempotencyKey: data.idempotencyKey },
       include: { mailboxes: true },
     });
 
     if (existingOrder) {
-      return { order: existingOrder, isDuplicate: true };
+      return existingOrder;
     }
 
-    const order = await prisma.$transaction(async (tx) => {
-      const created = await tx.order.create({
+    return prisma.$transaction(async (tx) => {
+      const order = await tx.order.create({
         data: {
-          customerId: input.customerId,
-          domain: input.domain,
-          provider: input.provider,
-          mailboxCount: input.mailboxCount,
+          customerId: data.customerId,
+          domain: data.domain,
+          provider: data.provider,
+          mailboxCount: data.mailboxCount,
           status: OrderStatus.PENDING,
-          idempotencyKey: input.idempotencyKey,
+          idempotencyKey: data.idempotencyKey,
+          mailboxes: {
+            create: Array.from({ length: data.mailboxCount }, (_, index) => ({
+              emailAddress: `mailbox${index + 1}@${data.domain}`,
+              status: MailboxStatus.PENDING,
+            })),
+          },
+        },
+        include: {
+          mailboxes: true,
         },
       });
 
-      await tx.auditLog.create({
-        data: {
-          orderId: created.id,
-          fromStatus: null,
-          toStatus: OrderStatus.PENDING,
-          actionBy: input.customerId,
-          reason: "Order created",
-        },
+      await AuditService.recordStatusTransition(tx, {
+        orderId: order.id,
+        fromStatus: null,
+        toStatus: OrderStatus.PENDING,
+        actionBy: data.customerId,
+        reason: "Order created",
       });
 
-      return created;
+      return order;
     });
-
-    return { order, isDuplicate: false };
   }
 
   /**
-   * Updates order status ensuring strict state machine validation and audit logging.
+   * Transitions an order to the next status within an interactive transaction.
+   * Validates the transition using the pure domain state machine.
    */
-  static async updateOrderStatus(
+  static async transitionOrderStatus(
     orderId: string,
     nextStatus: OrderStatus,
     actionBy: string,
     reason?: string
   ) {
+    return prisma.$transaction(async (tx) => {
+      const order = await tx.order.findUniqueOrThrow({
+        where: { id: orderId },
+      });
+
+      const currentStatus = order.status as OrderStatus;
+      assertTransition(currentStatus, nextStatus);
+
+      const updatedOrder = await tx.order.update({
+        where: { id: orderId },
+        data: { status: nextStatus },
+        include: { mailboxes: true },
+      });
+
+      await AuditService.recordStatusTransition(tx, {
+        orderId,
+        fromStatus: currentStatus,
+        toStatus: nextStatus,
+        actionBy,
+        reason,
+      });
+
+      return updatedOrder;
+    });
+  }
+
+  /**
+   * Specifically transitions FAILED -> PENDING with actionBy: adminUserId and reason "Admin retry".
+   * Rejects if the order is not currently in FAILED status.
+   */
+  static async retryFailedOrder(orderId: string, adminUserId: string) {
     const order = await prisma.order.findUniqueOrThrow({
       where: { id: orderId },
     });
 
-    if (!canTransitionOrder(order.status as OrderStatus, nextStatus)) {
+    const currentStatus = order.status as OrderStatus;
+    if (currentStatus !== OrderStatus.FAILED) {
       throw new Error(
-        `Invalid status transition from ${order.status} to ${nextStatus}`
+        `Cannot retry order '${orderId}': Order is in '${currentStatus}' status, but must be in '${OrderStatus.FAILED}' to retry.`
       );
     }
 
     return prisma.$transaction(async (tx) => {
-      const updated = await tx.order.update({
+      assertTransition(currentStatus, OrderStatus.PENDING);
+
+      // Reset any failed mailboxes back to PENDING for the retry
+      await tx.mailbox.updateMany({
+        where: { orderId, status: MailboxStatus.FAILED },
+        data: { status: MailboxStatus.PENDING },
+      });
+
+      const updatedOrder = await tx.order.update({
         where: { id: orderId },
-        data: { status: nextStatus },
+        data: { status: OrderStatus.PENDING },
+        include: { mailboxes: true },
       });
 
-      await tx.auditLog.create({
-        data: {
-          orderId,
-          fromStatus: order.status as OrderStatus,
-          toStatus: nextStatus,
-          actionBy,
-          reason,
-        },
+      await AuditService.recordStatusTransition(tx, {
+        orderId,
+        fromStatus: OrderStatus.FAILED,
+        toStatus: OrderStatus.PENDING,
+        actionBy: adminUserId,
+        reason: "Admin retry",
       });
 
-      return updated;
+      return updatedOrder;
     });
   }
 
+  /**
+   * Fetch order by ID with associated mailboxes and audit history.
+   */
   static async getOrderById(orderId: string) {
     return prisma.order.findUnique({
       where: { id: orderId },
@@ -98,4 +148,3 @@ export class OrderService {
     });
   }
 }
-

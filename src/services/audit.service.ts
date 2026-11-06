@@ -1,17 +1,26 @@
-import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { OrderStatus } from "@/domain";
+import { prisma } from "@/lib/prisma";
 
-export interface LogAuditParams {
+export type PrismaTransaction = Prisma.TransactionClient;
+
+export interface RecordStatusTransitionParams {
   orderId: string;
-  fromStatus?: OrderStatus | null;
+  fromStatus: OrderStatus | null;
   toStatus: OrderStatus;
   actionBy: string;
   reason?: string;
 }
 
 export class AuditService {
-  static async logStatusTransition(params: LogAuditParams) {
-    return prisma.auditLog.create({
+  /**
+   * Records a status transition within an active Prisma transaction.
+   */
+  static async recordStatusTransition(
+    tx: PrismaTransaction,
+    params: RecordStatusTransitionParams
+  ) {
+    return tx.auditLog.create({
       data: {
         orderId: params.orderId,
         fromStatus: params.fromStatus ?? null,
@@ -22,6 +31,9 @@ export class AuditService {
     });
   }
 
+  /**
+   * Retrieves the full audit history for a given order in chronological order.
+   */
   static async getOrderHistory(orderId: string) {
     return prisma.auditLog.findMany({
       where: { orderId },
@@ -29,4 +41,3 @@ export class AuditService {
     });
   }
 }
-

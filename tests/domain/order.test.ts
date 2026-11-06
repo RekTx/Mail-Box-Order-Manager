@@ -2,8 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   CreateOrderInputSchema,
   OrderStatus,
-  canTransitionOrder,
-  ORDER_STATE_TRANSITIONS,
+  canTransition,
 } from "../../src/domain";
 
 describe("Domain: Order Validation", () => {
@@ -70,17 +69,17 @@ describe("Domain: Order Validation", () => {
 
 describe("Domain: Order State Machine", () => {
   it("should allow valid transitions", () => {
-    expect(canTransitionOrder(OrderStatus.PENDING, OrderStatus.PROVISIONING)).toBe(true);
-    expect(canTransitionOrder(OrderStatus.PENDING, OrderStatus.FAILED)).toBe(true);
-    expect(canTransitionOrder(OrderStatus.PROVISIONING, OrderStatus.ACTIVE)).toBe(true);
-    expect(canTransitionOrder(OrderStatus.PROVISIONING, OrderStatus.FAILED)).toBe(true);
-    expect(canTransitionOrder(OrderStatus.FAILED, OrderStatus.PENDING)).toBe(true);
+    expect(canTransition(OrderStatus.PENDING, OrderStatus.PROVISIONING)).toBe(true);
+    expect(canTransition(OrderStatus.PROVISIONING, OrderStatus.ACTIVE)).toBe(true);
+    expect(canTransition(OrderStatus.PROVISIONING, OrderStatus.FAILED)).toBe(true);
+    expect(canTransition(OrderStatus.FAILED, OrderStatus.PENDING)).toBe(true);
   });
 
   it("should reject invalid transitions", () => {
-    expect(canTransitionOrder(OrderStatus.PENDING, OrderStatus.ACTIVE)).toBe(false);
-    expect(canTransitionOrder(OrderStatus.ACTIVE, OrderStatus.PENDING)).toBe(false);
-    expect(canTransitionOrder(OrderStatus.ACTIVE, OrderStatus.FAILED)).toBe(false);
+    expect(canTransition(OrderStatus.PENDING, OrderStatus.ACTIVE)).toBe(false);
+    expect(canTransition(OrderStatus.PENDING, OrderStatus.FAILED)).toBe(false);
+    expect(canTransition(OrderStatus.ACTIVE, OrderStatus.PENDING)).toBe(false);
+    expect(canTransition(OrderStatus.ACTIVE, OrderStatus.FAILED)).toBe(false);
+    expect(canTransition(OrderStatus.FAILED, OrderStatus.ACTIVE)).toBe(false);
   });
 });
-
