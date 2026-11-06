@@ -1,3 +1,7 @@
+
+
+https://github.com/user-attachments/assets/dad7c9d4-5bc2-4b52-8811-b0222ad01076
+
 # Mailbox Order Manager
 
 An enterprise-grade Mailbox Order Management application built with **Next.js (App Router, Strict TypeScript)**, **PostgreSQL via Prisma**, and **Tailwind CSS**. 
@@ -8,7 +12,10 @@ Features pure domain Finite State Machine transitions, concurrency-safe backgrou
 
 ## Demo Video
 
-[Link to 2-3 min Loom/YouTube walkthrough]
+
+https://github.com/user-attachments/assets/dd57d83e-2b0c-4dc4-b332-e0eec5b64b03
+
+
 
 ---
 
