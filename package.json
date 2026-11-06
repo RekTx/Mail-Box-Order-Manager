@@ -11,7 +11,8 @@
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
-    "test": "vitest run"
+    "test": "vitest run",
+    "worker": "tsx src/worker/mailbox.worker.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

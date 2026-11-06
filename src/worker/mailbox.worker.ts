@@ -192,3 +192,43 @@ export class MailboxWorker {
   }
 }
 
+async function startWorker() {
+  console.log('[Worker] Mailbox background worker started.');
+  console.log('[Worker] Polling for PENDING orders (Press Ctrl+C to stop)...');
+
+  let isRunning = true;
+  process.on('SIGINT', () => {
+    isRunning = false;
+    console.log('\n[Worker] Gracefully shutting down...');
+  });
+  process.on('SIGTERM', () => {
+    isRunning = false;
+    console.log('\n[Worker] Gracefully shutting down...');
+  });
+
+  while (isRunning) {
+    try {
+      const result = await MailboxWorker.processNext();
+
+      if (result) {
+        console.log(
+          `[Worker] Order ${result.orderId} processed: Status -> ${result.finalStatus} (${result.activeCount} active, ${result.failedCount} failed)`
+        );
+      } else {
+        // No pending orders right now; sleep 3 seconds before next poll
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+      }
+    } catch (error) {
+      console.error('[Worker Error]:', error);
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+    }
+  }
+}
+
+// Only invoke automatically when run directly via tsx / node
+if (process.env.NODE_ENV !== 'test') {
+  startWorker().catch((err) => {
+    console.error('[Worker Fatal]:', err);
+    process.exit(1);
+  });
+}
